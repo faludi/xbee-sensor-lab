@@ -6,4 +6,5 @@ Each sensor is from Sparkfun Electronics. They connect directly to Digi XBee 3 G
 
 
 XBee Sensor Lab at Embedded World 2023: https://youtu.be/zfkEAhnPG1s
+
 XBee Sensor Lab at CES 2024: https://youtu.be/LSKDwjhVuL0
