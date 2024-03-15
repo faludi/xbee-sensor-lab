@@ -4,3 +4,6 @@ The Digi XBee Sensor Lab is a demonstration of cellular IoT using a variety of d
 
 Each sensor is from Sparkfun Electronics. They connect directly to Digi XBee 3 Global Cellular modems via I2C. These XBee modules use MicroPython onboard to accept the raw data, transform it to readings, manage timings, upload to Remote Manager, configure the XBee and provide resiliency. Data posted to Remote Manager data streams is presented via a secure API, and we seperately implemented a custom dashboard to display the data as it happens.
 
+
+XBee Sensor Lab at Embedded World 2023: https://youtu.be/zfkEAhnPG1s
+XBee Sensor Lab at CES 2024: https://youtu.be/LSKDwjhVuL0
