@@ -44,8 +44,9 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 try:
     sgp40 = qwiic_sgp40.QwiicSGP40()
     if sgp40.begin() == False:
-        status_led.blink(20, 1.5)
-        module.reset()
+        pass
+        # status_led.blink(20, 1.5)
+        # module.reset()
 except Exception as e:
     print(e)
 
