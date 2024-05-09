@@ -24,7 +24,7 @@ from digi import cloud
 from digi import gnss
 import uio
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 print(" Digi Sensor Lab - GNSS v%s" % __version__)
 
 # create module object for xbee
@@ -90,6 +90,9 @@ def send(value1, value2, value3):
             data.send(timeout=10)
             data = cloud.DataPoints(config.DRM_TRANSPORT)
             data.add(config.STREAM3,value3)
+            data.send(timeout=10)
+            data = cloud.DataPoints(config.DRM_TRANSPORT)
+            data.add(config.STREAM4,"(" + value1 + "," + value2 + ")")
             data.send(timeout=10)
             print(" drm -> ", value1, value2, value3)
             drm_fail = 0
