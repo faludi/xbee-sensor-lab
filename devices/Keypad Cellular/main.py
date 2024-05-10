@@ -23,7 +23,7 @@ import machine
 import qwiic_keypad
 from digi import cloud
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 print(" Digi Sensor Lab - Keypad v%s" % __version__)
 
 # create module object for xbee
@@ -69,7 +69,7 @@ def send(value, drm_fail):
 presses = ""
 cnt = 0
 active = False
-t1 = time.ticks_ms()
+t1 = time.ticks_ms() - (86400 * 1000)  # first upload immediately
 print(" waiting for key presses...")
 while True:
     try:
