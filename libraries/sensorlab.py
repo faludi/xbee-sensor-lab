@@ -20,7 +20,7 @@ import network
 import time
 import xbee
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 class Module:
     # xbee configuration performed automatically at each startup
@@ -47,8 +47,11 @@ class Module:
         self.conn = network.Cellular()
         self.set_apn(Module.apns)
         for cmd,value in Module.xbee_config:
-            xbee.atcmd(cmd, value)
-            print(" " + cmd + "=" + str(value) )
+            try:
+                xbee.atcmd(cmd, value)
+                print(" " + cmd + "=" + str(value) )
+            except Exception as e:
+                print(e)
         self.connect()
 
     def set_apn(self, apn_list):
