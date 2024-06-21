@@ -73,7 +73,7 @@ def get_calibration():
             calibrationFile.write(str(config.ZERO_OFFSET) + ',' + str(config.CALIBRATION_FACTOR) )
             calibrationFile.close()
             calibrationFile = uio.open(config.CALIBRATION_FILE, mode="r")
-        # read coordinates from cached file and send
+        # read calibrations from cached file
         zero_offset, calibration_factor = calibrationFile.readline().split(',')
         calibrationFile.close()
         print('', zero_offset, calibration_factor)
@@ -83,7 +83,7 @@ def get_calibration():
 def set_calibration(zero_offset, calibration_factor):
         print(' setting calibration')
         print('', zero_offset, calibration_factor)
-        # open file for writing and save lat/long comma-separated
+        # open file for writing and save calibration values comma-separated
         calibrationFile = uio.open(config.CALIBRATION_FILE, mode="w")
         calibrationFile.write(str(zero_offset) + ',' + str(calibration_factor))
         calibrationFile.close()
