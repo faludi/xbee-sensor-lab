@@ -104,7 +104,7 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 # set up BLE
 address_type = ble.ADDR_TYPE_PUBLIC
 # address into bytes object
-address = get_address()                #binascii.unhexlify(config.THUNDERBOARD_ADDRESS.replace(':', ''))
+address = get_address()
 # service and characteristic UUIDs
 io_service_uuid = 0x1815
 io_characteristic_uuid = 0x2A56
@@ -124,7 +124,7 @@ t1 = time.ticks_add(time.ticks_ms(), config.UPLOAD_RATE * -1000)
 # main loop
 while True:
     print(' current sensor address:', form_mac_address(address))
-    if ble_fail < config.MAX_BLE_FAIL:
+    if ble_fail < config.MAX_BLE_FAIL and form_mac_address(address) != '00:00:00:00:00:00': # discover address if needed
         try:
             print(' connecting to:', form_mac_address(address))
             with ble.gap_connect(address_type, address) as conn:
