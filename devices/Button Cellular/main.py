@@ -44,11 +44,11 @@ import sensorlab
 import time
 import config
 import machine
-from machine import I2C
 import qwiic_button
 from digi import cloud
+import qwiic_i2c
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 print(" Digi Sensor Lab - Button v%s" % __version__)
 
 # create module object for xbee
@@ -67,7 +67,8 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 
 # set up sensor and test LED
 try:
-    bt=qwiic_button.QwiicButton()
+    bus = qwiic_i2c.get_i2c_driver(freq=400000) # pass i2c driver to library to set custom frequency
+    bt=qwiic_button.QwiicButton(i2c_driver = bus)
     if bt.begin() == False:
         status_led.blink(20, 1.5)
         module.reset()

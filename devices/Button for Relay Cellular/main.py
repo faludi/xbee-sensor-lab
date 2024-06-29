@@ -27,8 +27,9 @@ import qwiic_button
 from digi import cloud
 import urequests
 from remotemanager import RemoteManagerConnection
+import qwiic_i2c
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 print(" Digi Sensor Lab - Button for Relay v%s" % __version__)
 
 # commands to exchange with Remote Manager
@@ -170,7 +171,8 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 
 # set up sensor and test LED
 try:
-    bt=qwiic_button.QwiicButton()
+    bus = qwiic_i2c.get_i2c_driver(freq=400000) # pass i2c driver to library to set custom frequency
+    bt=qwiic_button.QwiicButton(i2c_driver = bus)
     bt.LED_config(16, 2000, 2000)
     bt.set_debounce_time(1)
 except Exception as e:
