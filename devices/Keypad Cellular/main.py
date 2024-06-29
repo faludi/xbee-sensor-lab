@@ -22,8 +22,9 @@ import config
 import machine
 import qwiic_keypad
 from digi import cloud
+import qwiic_i2c
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 print(" Digi Sensor Lab - Keypad v%s" % __version__)
 
 # create module object for xbee
@@ -42,7 +43,8 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 
 # set up and test for sensor.
 try:
-    keypad = qwiic_keypad.QwiicKeypad()
+    bus = qwiic_i2c.get_i2c_driver(freq=400000) # pass i2c driver to library to set custom frequency
+    keypad = qwiic_keypad.QwiicKeypad(i2c_driver = bus)
     keypad.begin()
 except Exception as e:
     print(e)
