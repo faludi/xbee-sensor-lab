@@ -24,7 +24,7 @@ import person_sensor_qwiic
 from machine import I2C
 from digi import cloud
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 print(" Digi Sensor Lab - Person Sensor v%s" % __version__)
 
 # create module object for xbee
@@ -71,12 +71,13 @@ while True:
                     is_facing.append(face_record['is_facing']) # for each face, record facing status in array              
             except Exception as e:
                 print(e)
+                num_faces = 0 # if sensor is not found then face count is zero
                 status_led.blink(4, 1.5)
             try:
                 attention = sum(is_facing)/len(is_facing) # average the is_facing to determine percentage of attention
             except ZeroDivisionError:
                 attention = 0.0 # if no faces found, set attention to zero
-            if num_faces > 0: # print a string for debugging detection
+            if num_faces > 0: # print a progress string for debugging detection
                 print(num_faces,end='')
             else:
                 print('.',end='')
