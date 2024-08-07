@@ -1,4 +1,4 @@
-# Sensor Lab - Person Sensor
+# Sensor Lab - QR Reader
 
 '''
  Copyright 2024, Digi International Inc.
@@ -20,12 +20,12 @@ import sensorlab
 import time
 import config
 import machine
-import person_sensor_qwiic
+import qr_reader_qwiic
 from machine import I2C
 from digi import cloud
 
-f__version__ = "1.0.2"
-print(" Digi Sensor Lab - Person Sensor v%s" % __version__)
+__version__ = "1.0.0"
+print(" Digi Sensor Lab - QR Reader v%s" % __version__)
 
 # create module object for xbee
 module=sensorlab.Module()
@@ -44,7 +44,7 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 # set up sensor
 try:
     i2c = I2C(1, freq=400000)
-    person_sensor = person_sensor_qwiic.person_sensor(i2c)
+    qr_reader = qr_reader_qwiic.QR_READER(i2c)
 except Exception as e:
     print(e)
     status_led.blink(20, 1.5)
@@ -53,44 +53,31 @@ except Exception as e:
 # initialize comms failure count
 drm_fail = 0
 
-# first sample immediately
-t1 = time.ticks_add(time.ticks_ms(), config.UPLOAD_RATE * -1000)
+# initialize temporary storage of prior reads
+last_message = ''
+message = None
+
+t1 = time.ticks_ms() # mark start of process
 # main loop
 while True:
+    try:
+        message = qr_reader.get_data()
+    except Exception as e:
+        print(e)
     t2 = time.ticks_ms()
-    if time.ticks_diff(t2, t1) >= config.UPLOAD_RATE * 1000: # time for a sample
+    if time.ticks_diff(t2, t1) >= config.TIMEOUT_RATE * 1000: # time to clear last message
+        last_message = ''
         t1 = time.ticks_ms()
-        faces = 0
-        is_facing = []
-        while (time.ticks_ms() < t1 + (config.UPLOAD_RATE * 1000) - (1 * 1000)): # until one second before the end of the cycle...
-            try:
-                num_faces, faces_data = person_sensor.get_data() # get number of faces detected and the data about each
-                if (num_faces > faces):
-                    faces = num_faces # record the max number of faces detected
-                for face_record in faces_data:
-                    is_facing.append(face_record['is_facing']) # for each face, record facing status in array              
-            except Exception as e:
-                print(e)
-                num_faces = 0 # if sensor is not found then face count is zero
-                status_led.blink(4, 1.5)
-            try:
-                attention = sum(is_facing)/len(is_facing) # average the is_facing to determine percentage of attention
-            except ZeroDivisionError:
-                attention = 0.0 # if no faces found, set attention to zero
-            if num_faces > 0: # print a progress string for debugging detection
-                print(num_faces,end='')
-            else:
-                print('.',end='')
-            time.sleep(0.2) # wait 200 ms between reads
-        print('') # line feed
+        print('.', end='')
+    if message is not None and message != last_message:
+        t1 = time.ticks_ms() # mark the time of latest upload
+        last_message = message # update the last message sent
         try:
             data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM1,faces)
+            data.add(config.STREAM1,message)
             data.send(timeout=10)
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM2,attention)
-            data.send(timeout=10)
-            print(" drm -> ", faces, attention)
+            print('')
+            print(" drm -> ", message)
             drm_fail = 0
         except Exception as e:
             print(e)
@@ -101,3 +88,4 @@ while True:
         print (" drm_fails {drm}".format(drm=drm_fail))
         module.reset()
     dog.feed() # update watchdog timer
+    time.sleep(qr_reader_qwiic.TINY_CODE_READER_DELAY)
