@@ -1,4 +1,4 @@
-# Sensor Lab - QR Reader
+# Sensor Lab - QR Reader https://www.sparkfun.com/products/23352
 
 '''
  Copyright 2024, Digi International Inc.

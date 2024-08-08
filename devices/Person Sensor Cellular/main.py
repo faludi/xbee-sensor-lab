@@ -1,4 +1,4 @@
-# Sensor Lab - Person Sensor
+# Sensor Lab - Person Sensor  https://www.sparkfun.com/products/21231
 
 '''
  Copyright 2024, Digi International Inc.
@@ -44,7 +44,7 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 # set up sensor
 try:
     i2c = I2C(1, freq=400000)
-    person_sensor = person_sensor_qwiic.person_sensor(i2c)
+    person_sensor = person_sensor_qwiic.PERSON_SENSOR(i2c)
 except Exception as e:
     print(e)
     status_led.blink(20, 1.5)
