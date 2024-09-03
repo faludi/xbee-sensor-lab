@@ -40,7 +40,8 @@ class Module:
     ("8901", "edneopate010.dpa", 2),
     ("8914", "digicpn.gw12.vzwentp", 3),
     ("89445", "hologram", 1),
-    ("89357", "hologram",1 ) 
+    ("89357", "hologram",1 ), 
+    ("8988228", "iot.1nce.net",1 )
     ]
 
     def __init__(self):
