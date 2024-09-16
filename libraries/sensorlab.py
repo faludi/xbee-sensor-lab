@@ -20,7 +20,7 @@ import network
 import time
 import xbee
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 class Module:
     # xbee configuration performed automatically at each startup
@@ -75,6 +75,10 @@ class Module:
                 xbee.atcmd("CP", carrier_profile)
                 print(" AN:", apn)
                 print(" CP:", carrier_profile)
+
+    def get_iccid(self):
+         id = xbee.atcmd("S#")
+         return id
 
     def connect(self):
         print(" wait for cell network...")
