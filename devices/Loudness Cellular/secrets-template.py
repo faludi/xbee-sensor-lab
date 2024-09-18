@@ -4,5 +4,5 @@
 MQTT_USER = "username_goes_here"
 MQTT_PASSWORD = "password_goes_here"
 
-# Token for using Tago.io HTTP Upload 
-TAGOIO_TOKEN = 'tago.io_token_goes_here'
+# Authorization Token for using HTTP Upload 
+HTTP_TOKEN = 'http_token_goes_here'

@@ -1,6 +1,6 @@
 # configuration file for xbee sensor lab Loudness
 
-__version__ = "1.3.1"
+__version__ = "1.3.2"
 
 from digi import cloud
 
@@ -21,7 +21,7 @@ HTTP_UPLOAD = False
 if HTTP_UPLOAD:
     import secrets
     HTTP_URL = "http://api.tago.io/data"
-    HTTP_HEADERS = {"Device-Token": secrets.TAGOIO_TOKEN}
+    HTTP_HEADERS = {"Device-Token": secrets.HTTP_TOKEN}
 
 DRM_UPLOAD = False
 if DRM_UPLOAD:
