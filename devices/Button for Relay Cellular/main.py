@@ -187,7 +187,7 @@ relay_ctrl = RelayControl(bt, rm)
 drm_fail = 0
 
 # start timer for relay checks
-t1 = time.ticks_add(time.ticks_ms(), config.RELAY_CHECK_RATE * - 1000)
+t1 = time.ticks_add(time.ticks_ms(), int(config.RELAY_CHECK_RATE * - 1000))
 relay_state = False # state is unknown at this point
 button_click = False
 

@@ -103,7 +103,7 @@ def send(value1, value2, value3):
 
 
 # first sample immediately
-t1 = time.ticks_add(time.ticks_ms(), upload_rate * -1000)
+t1 = time.ticks_add(time.ticks_ms(), int(upload_rate * -1000))
 # main loop
 while True:
     t2 = time.ticks_ms()
