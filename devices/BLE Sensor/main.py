@@ -120,7 +120,7 @@ ble_fail = 0
 active = ble.active(True)
 
 # first sample immediately
-t1 = time.ticks_add(time.ticks_ms(), config.UPLOAD_RATE * -1000)
+t1 = time.ticks_add(time.ticks_ms(), int(config.UPLOAD_RATE * -1000))
 # main loop
 while True:
     print(' current sensor address:', form_mac_address(address))

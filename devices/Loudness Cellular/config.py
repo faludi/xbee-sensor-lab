@@ -1,6 +1,6 @@
 # configuration file for xbee sensor lab Loudness
 
-__version__ = "1.3.2"
+__version__ = "1.3.4"
 
 from digi import cloud
 
@@ -9,7 +9,7 @@ MAX_COMMS_FAIL = 10 # number of consecutive communications failures before reset
 INPUT_BUTTON = "D0" # button to shut down cellular component when long-pressed
 STATUS_LED = "D4" # LED output pin for status messages
 
-MQTT_UPLOAD = True
+MQTT_UPLOAD = False
 if MQTT_UPLOAD:
     MQTT_TOPIC = "loudness"
     MQTT_SERVER = "mqtt.tago.io"
@@ -22,8 +22,10 @@ if HTTP_UPLOAD:
     import secrets
     HTTP_URL = "http://api.tago.io/data"
     HTTP_HEADERS = {"Device-Token": secrets.HTTP_TOKEN}
+    HTTP_VARIABLE = "loudness"
+    HTTP_UNIT = "dB"
 
-DRM_UPLOAD = False
+DRM_UPLOAD = True
 if DRM_UPLOAD:
     STREAM = "xbsl/loudness" #DRM
     DRM_TRANSPORT = cloud.TRANSPORT_UDP # Digi Remote Manager protocol: cloud.TRANSPORT_TCP or cloud.TRANSPORT_UDP

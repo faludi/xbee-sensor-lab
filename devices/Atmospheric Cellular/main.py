@@ -53,7 +53,7 @@ except Exception as e:
 drm_fail = 0
 
 # first sample immediately
-t1 = time.ticks_add(time.ticks_ms(), config.UPLOAD_RATE * -1000)
+t1 = time.ticks_add(time.ticks_ms(), int(config.UPLOAD_RATE * -1000))
 # main loop
 while True:
     t2 = time.ticks_ms()

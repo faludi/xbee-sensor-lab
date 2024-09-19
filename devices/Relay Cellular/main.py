@@ -111,7 +111,7 @@ status_led.off()
 drm_fail = 0
 
 # start timer for command checks
-t1 = time.ticks_add(time.ticks_ms(), config.UPLOAD_RATE * -1000)
+t1 = time.ticks_add(time.ticks_ms(), int(config.UPLOAD_RATE * -1000))
 last_state = -1
 # main loop
 while True:

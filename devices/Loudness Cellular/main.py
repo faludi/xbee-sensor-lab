@@ -68,7 +68,7 @@ except Exception as e:
 comm_fail = 0
 
 # first sample immediately
-t1 = time.ticks_add(time.ticks_ms(), config.UPLOAD_RATE * -1000)
+t1 = time.ticks_add(time.ticks_ms(), int(int(config.UPLOAD_RATE * -1000)))
 # main loop
 while True:
     t2 = time.ticks_ms()
@@ -81,7 +81,7 @@ while True:
             status_led.blink(4, 1.5)
         if config.HTTP_UPLOAD:
             try:
-                json = {"variable":"loudness","value":loudness,"unit":"dB"}
+                json = {"variable":config.HTTP_VARIABLE,"value":loudness,"unit":config.HTTP_UNIT}
                 response = urequests.post(config.HTTP_URL, headers=config.HTTP_HEADERS, json=json, request_1_1=True)
                 print(" http -> " , loudness," (" + str(response.status_code), response.reason.decode(), 
                       "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
@@ -120,4 +120,3 @@ while True:
         print (" comm_fails {comm}".format(comm=comm_fail))
         module.reset()
     dog.feed() # update watchdog timer
-    time.sleep(.1)
