@@ -20,6 +20,8 @@ import sensorlab
 import time
 import config
 import machine
+from machine import I2C
+import zio_loudness
 if config.DRM_UPLOAD:
     from digi import cloud
 if config.MQTT_UPLOAD:
@@ -27,10 +29,8 @@ if config.MQTT_UPLOAD:
     import secrets
 if config.HTTP_UPLOAD:
     import urequests
-from machine import I2C
-import zio_loudness
 
-__version__ = "1.3.4"
+__version__ = "1.3.0"
 print(" Digi Sensor Lab - Loudness v%s" % __version__)
 
 # create module object for xbee

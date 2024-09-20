@@ -24,12 +24,18 @@ import time
 import config
 import machine
 import qwiic_button
-from digi import cloud
 import urequests
 from remotemanager import RemoteManagerConnection
 import qwiic_i2c
+if config.DRM_UPLOAD:
+    from digi import cloud
+if config.MQTT_UPLOAD:
+    from umqtt.simple import MQTTClient
+    import secrets
+if config.HTTP_UPLOAD:
+    import urequests
 
-__version__ = "1.2.3"
+__version__ = "1.3.0"
 print(" Digi Sensor Lab - Button for Relay v%s" % __version__)
 
 # commands to exchange with Remote Manager
@@ -166,6 +172,14 @@ button.check(5000) # check for shutdown button
 status_led = sensorlab.StatusLED(config.STATUS_LED)
 status_led.off()
 
+# create mqtt client and connect to server
+if config.MQTT_UPLOAD:
+    client = MQTTClient(config.MQTT_CLIENT_ID+module.get_iccid(), config.MQTT_SERVER, port=config.MQTT_PORT, 
+                        user=secrets.MQTT_USER, password=secrets.MQTT_PASSWORD, ssl=config.MQTT_SSL)
+    print(" connecting to '%s'... " % config.MQTT_SERVER, end="")
+    client.connect()
+    print(" connected")
+
 #create watchdog timer
 dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 
@@ -184,7 +198,7 @@ except Exception as e:
 relay_ctrl = RelayControl(bt, rm)
 
 # initialize comms failure count
-drm_fail = 0
+comm_fail  = 0
 
 # start timer for relay checks
 t1 = time.ticks_add(time.ticks_ms(), int(config.RELAY_CHECK_RATE * - 1000))
@@ -223,16 +237,42 @@ while True:
         status_led.blink(4, 1.5)
 
     if button_click == True:
-        try: 
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM1,int(button_click))
-            data.send(timeout=10)
-            print(" drm -> ", int(button_click))
-            drm_fail = 0
-        except Exception as e:
-            print(e)
-            drm_fail += 1
-            status_led.blink(2, 0.2)
+        if config.HTTP_UPLOAD:
+            try:
+                json = {"variable":config.HTTP_VARIABLE,"value":int(button_click),"unit":config.HTTP_UNIT}
+                response = urequests.post(config.HTTP_URL, headers=config.HTTP_HEADERS, json=json, request_1_1=True)
+                print(" http -> " , int(button_click)," (" + str(response.status_code), response.reason.decode(), 
+                      "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
+                if 200 <= response.status_code <= 299:
+                    comm_fail = 0
+                else:
+                    comm_fail +=1
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+            finally:
+                response.close()
+        if config.MQTT_UPLOAD:
+            try:
+                client.publish(config.MQTT_TOPIC, str(button_click))
+                print(" mqtt -> ", int(button_click))
+                comm_fail = 0
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+        if config.DRM_UPLOAD:
+            try: 
+                data = cloud.DataPoints(config.DRM_TRANSPORT)
+                data.add(config.STREAM1,int(button_click))
+                data.send(timeout=10)
+                print(" drm -> ", int(button_click))
+                comm_fail  = 0
+            except Exception as e:
+                print(e)
+                comm_fail  += 1
+                status_led.blink(2, 0.2)
         if relay_ctrl.set_relay(not relay_state): # toggle the relay and get results
             relay_state = not relay_state
         bt.clear_event_bits() # discard any intervening clicks
@@ -241,8 +281,8 @@ while True:
 
     button.check(5000) # check for shutdown button
     time.sleep_ms(20)
-    if drm_fail >= config.MAX_COMMS_FAIL:
-        print (" drm_fails {drm}".format(drm=drm_fail))
+    if comm_fail  >= config.MAX_COMMS_FAIL:
+        print (" comm_fails {comm}".format(comm=comm_fail ))
         try:
             bt.LED_off()
         except:

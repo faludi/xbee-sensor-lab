@@ -27,7 +27,13 @@ import xbee
 import alphanum_qwiic
 from machine import I2C
 import uio
-from digi import cloud
+if config.DRM_UPLOAD:
+    from digi import cloud
+if config.MQTT_UPLOAD:
+    from umqtt.simple import MQTTClient
+    import secrets
+if config.HTTP_UPLOAD:
+    import urequests
 
 # there is currently a 93-character limit in the datastream upload module,
 #  therefore an authenticated API call via HTTP can be selected in the config file
@@ -35,7 +41,7 @@ if config.USE_HTTP:
     from remotemanager import RemoteManagerConnection
     import secrets
 
-__version__ = "1.2.3"
+__version__ = "1.3.0"
 print(" Digi Sensor Lab - SMS Text Display v%s" % __version__)
 
 # defines a function for uploading data when using HTTP API calls
@@ -70,6 +76,14 @@ button.check(5000) # check for shutdown button
 status_led = sensorlab.StatusLED(config.STATUS_LED)
 status_led.off()
 
+# create mqtt client and connect to server
+if config.MQTT_UPLOAD:
+    client = MQTTClient(config.MQTT_CLIENT_ID+module.get_iccid(), config.MQTT_SERVER, port=config.MQTT_PORT, 
+                        user=secrets.MQTT_USER, password=secrets.MQTT_PASSWORD, ssl=config.MQTT_SSL)
+    print(" connecting to '%s'... " % config.MQTT_SERVER, end="")
+    client.connect()
+    print(" connected")
+
 #create watchdog timer
 dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 
@@ -92,20 +106,48 @@ if len(ph) == 11:
     phone_number = ph[0] + "-" + ph[1:4] + "-" + ph[4:7] + "-" + ph[7:11]
 print('phone number:', phone_number)
 message = 'TEXT ME AT ' + phone_number
-for i in range(2): # try the upload twice as the first one often fails
-    try: 
-        data = cloud.DataPoints(config.DRM_TRANSPORT)
-        data.add(config.STREAM1,message)
-        data.send(timeout=10)
-        data = cloud.DataPoints(config.DRM_TRANSPORT)
-        data.add(config.STREAM3,ph)
-        data.send(timeout=10)
-        print(" drm -> ", ph)
+if config.HTTP_UPLOAD:
+    try:
+        json = [{"variable":config.HTTP_VARIABLE1,"value":message,"unit":config.HTTP_UNIT},
+                {"variable":config.HTTP_VARIABLE3,"value":ph,"unit":config.HTTP_UNIT}]
+        response = urequests.post(config.HTTP_URL, headers=config.HTTP_HEADERS, json=json, request_1_1=True)
+        print(" http -> " , message, ph," (" + str(response.status_code), response.reason.decode(), 
+                "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
+        if 200 <= response.status_code <= 299:
+            comm_fail = 0
+        else:
+            comm_fail +=1
     except Exception as e:
         print(e)
+        comm_fail += 1
+        status_led.blink(2, 0.2)
+    finally:
+        response.close()
+if config.MQTT_UPLOAD:
+    try:
+        client.publish(config.MQTT_TOPIC1, str(message))
+        client.publish(config.MQTT_TOPIC3, str(ph))
+        print(" mqtt -> ", message, ph)
+        comm_fail = 0
+    except Exception as e:
+        print(e)
+        comm_fail += 1
+        status_led.blink(2, 0.2)
+if config.DRM_UPLOAD:
+    for i in range(2): # try the upload twice as the first one often fails
+        try: 
+            data = cloud.DataPoints(config.DRM_TRANSPORT)
+            data.add(config.STREAM1,message)
+            data.send(timeout=10)
+            data = cloud.DataPoints(config.DRM_TRANSPORT)
+            data.add(config.STREAM3,ph)
+            data.send(timeout=10)
+            print(" drm -> ", ph)
+        except Exception as e:
+            print(e)
 
 # initialize comms failure count
-drm_fail = 0
+comm_fail  = 0
 
 print('waiting for messages...')
 # main loop
@@ -132,34 +174,62 @@ while True:
             uio.open("log.txt", mode="w")
             file.write(sender + " " + message + '\n')
         file.close()
-        try: 
-            if len(message) > 128: # if the message is a long one...
-                if config.USE_HTTP: # either upload entire text using HTTP API...
-                    try: 
-                        upload_datapoint(stream_prefix + config.STREAM1, message)
-                    except Exception as e:
-                        print(e)
-                        drm_fail += 1
-                else: # or break long texts into chunks for upload with digi.cloud data streams
-                    chunk_size = 92
-                    chunks = [message[i:i+chunk_size] for i in range(0, len(message), chunk_size)]
-                    for chunk in chunks:
-                        data = cloud.DataPoints(config.DRM_TRANSPORT)
-                        data.add(config.STREAM1,chunk)
-                        data.send(timeout=10)
-            else: # short messages can always be uploaded without HTTP API
+        if config.HTTP_UPLOAD:
+            try:
+                json = [{"variable":config.HTTP_VARIABLE1,"value":message,"unit":config.HTTP_UNIT},
+                        {"variable":config.HTTP_VARIABLE2,"value":sender,"unit":config.HTTP_UNIT}]
+                response = urequests.post(config.HTTP_URL, headers=config.HTTP_HEADERS, json=json, request_1_1=True)
+                print(" http -> " , message, sender," (" + str(response.status_code), response.reason.decode(), 
+                      "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
+                if 200 <= response.status_code <= 299:
+                    comm_fail = 0
+                else:
+                    comm_fail +=1
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+            finally:
+                response.close()
+        if config.MQTT_UPLOAD:
+            try:
+                client.publish(config.MQTT_TOPIC1, str(message))
+                client.publish(config.MQTT_TOPIC2, str(sender))
+                print(" mqtt -> ", message, sender)
+                comm_fail = 0
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+        if config.DRM_UPLOAD:
+            try: 
+                if len(message) > 128: # if the message is a long one...
+                    if config.USE_HTTP: # either upload entire text using HTTP API...
+                        try: 
+                            upload_datapoint(stream_prefix + config.STREAM1, message)
+                        except Exception as e:
+                            print(e)
+                            comm_fail  += 1
+                    else: # or break long texts into chunks for upload with digi.cloud data streams
+                        chunk_size = 92
+                        chunks = [message[i:i+chunk_size] for i in range(0, len(message), chunk_size)]
+                        for chunk in chunks:
+                            data = cloud.DataPoints(config.DRM_TRANSPORT)
+                            data.add(config.STREAM1,chunk)
+                            data.send(timeout=10)
+                else: # short messages can always be uploaded without HTTP API
+                    data = cloud.DataPoints(config.DRM_TRANSPORT)
+                    data.add(config.STREAM1,message)
+                    data.send(timeout=10)
                 data = cloud.DataPoints(config.DRM_TRANSPORT)
-                data.add(config.STREAM1,message)
+                data.add(config.STREAM2,sender)
                 data.send(timeout=10)
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM2,sender)
-            data.send(timeout=10)
-            print(" drm -> ", message, sender)
-            drm_fail = 0
-        except Exception as e:
-            print(e)
-            drm_fail += 1
-            status_led.blink(2, 0.2)
+                print(" drm -> ", message, sender)
+                comm_fail  = 0
+            except Exception as e:
+                print(e)
+                comm_fail  += 1
+                status_led.blink(2, 0.2)
     if config.UPPERCASE == True: # uppercase all text if so configured
         message = message.upper()
     if 'display' in locals(): # check if display has been defined
@@ -180,13 +250,39 @@ while True:
         recent_messages = False
         t1 = time.ticks_ms() # mark the refresh time
         message = 'TEXT ME AT ' + phone_number
-        data = cloud.DataPoints(config.DRM_TRANSPORT)
-        data.add(config.STREAM1,message)
-        data.send(timeout=10)
+        if config.HTTP_UPLOAD:
+            try:
+                json = {"variable":config.HTTP_VARIABLE1,"value":message,"unit":config.HTTP_UNIT}
+                response = urequests.post(config.HTTP_URL, headers=config.HTTP_HEADERS, json=json, request_1_1=True)
+                print(" http -> " , message," (" + str(response.status_code), response.reason.decode(), 
+                      "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
+                if 200 <= response.status_code <= 299:
+                    comm_fail = 0
+                else:
+                    comm_fail +=1
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+            finally:
+                response.close()
+        if config.MQTT_UPLOAD:
+            try:
+                client.publish(config.MQTT_TOPIC1, str(message))
+                print(" mqtt -> ", message)
+                comm_fail = 0
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+        if config.DRM_UPLOAD:
+            data = cloud.DataPoints(config.DRM_TRANSPORT)
+            data.add(config.STREAM1,message)
+            data.send(timeout=10)
 
     button.check(5000) # check for shutdown button
-    if drm_fail >= config.MAX_COMMS_FAIL:
-        print (" drm_fails {drm}".format(drm=drm_fail))
+    if comm_fail  >= config.MAX_COMMS_FAIL:
+        print (" comm_fails {comm}".format(comm=comm_fail ))
         module.reset()
     dog.feed() # update watchdog timer
 

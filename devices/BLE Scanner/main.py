@@ -23,10 +23,16 @@ import time
 import alphanum_qwiic
 import machine
 import sensorlab
-from digi import cloud
 import config
+if config.DRM_UPLOAD:
+    from digi import cloud
+if config.MQTT_UPLOAD:
+    from umqtt.simple import MQTTClient
+    import secrets
+if config.HTTP_UPLOAD:
+    import urequests
 
-__version__ = "1.2.2"
+__version__ = "1.3.0"
 print(" Digi Sensor Lab - BLE Scanner v%s" % __version__)
 
 def form_mac_address(addr: bytes) -> str:
@@ -144,6 +150,14 @@ button.check(5000) # check for shutdown button
 status_led = sensorlab.StatusLED(config.STATUS_LED)
 status_led.off()
 
+# create mqtt client and connect to server
+if config.MQTT_UPLOAD:
+    client = MQTTClient(config.MQTT_CLIENT_ID+module.get_iccid(), config.MQTT_SERVER, port=config.MQTT_PORT, 
+                        user=secrets.MQTT_USER, password=secrets.MQTT_PASSWORD, ssl=config.MQTT_SSL)
+    print(" connecting to '%s'... " % config.MQTT_SERVER, end="")
+    client.connect()
+    print(" connected")
+
 #create watchdog timer
 dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 
@@ -157,7 +171,7 @@ except OSError as e:
     print(' display not found error:', e)
 
 # initialize comms failure count
-drm_fail = 0
+comm_fail  = 0
 
 #initialize distance data with list size
 data_array_size = 6
@@ -215,21 +229,47 @@ while True:
                 display.print_scroll((label), 0.6, 0.3)
             except Exception as e:
                     print(e)
-        try:
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM1, label)
-            data.send(timeout=10)
-            # data = cloud.DataPoints(config.DRM_TRANSPORT)
-            # data.add(config.STREAM2, average_distance)
-            # data.send(timeout=10)
-            print(" drm -> ", label)
-            drm_fail = 0
-        except Exception as e:
-            print(e)
-            drm_fail += 1
-            status_led.blink(2, 0.2)
+        if config.HTTP_UPLOAD:
+            try:
+                json = {"variable":config.HTTP_VARIABLE1,"value":label,"unit":config.HTTP_UNIT1}
+                response = urequests.post(config.HTTP_URL, headers=config.HTTP_HEADERS, json=json, request_1_1=True)
+                print(" http -> " , label," (" + str(response.status_code), response.reason.decode(), 
+                      "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
+                if 200 <= response.status_code <= 299:
+                    comm_fail = 0
+                else:
+                    comm_fail +=1
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+            finally:
+                response.close()
+        if config.MQTT_UPLOAD:
+            try:
+                client.publish(config.MQTT_TOPIC, str(label))
+                print(" mqtt -> ", label)
+                comm_fail = 0
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+        if config.DRM_UPLOAD:
+            try:
+                data = cloud.DataPoints(config.DRM_TRANSPORT)
+                data.add(config.STREAM1, label)
+                data.send(timeout=10)
+                # data = cloud.DataPoints(config.DRM_TRANSPORT)
+                # data.add(config.STREAM2, average_distance)
+                # data.send(timeout=10)
+                print(" drm -> ", label)
+                comm_fail  = 0
+            except Exception as e:
+                print(e)
+                comm_fail  += 1
+                status_led.blink(2, 0.2)
     button.check(5000) # check for shutdown button
-    if drm_fail >= config.MAX_COMMS_FAIL:
-        print (" drm_fails {drm}".format(drm=drm_fail))
+    if comm_fail  >= config.MAX_COMMS_FAIL:
+        print (" comm_fails {comm}".format(comm=comm_fail ))
         module.reset()
     dog.feed() # update watchdog timer

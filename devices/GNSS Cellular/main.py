@@ -20,11 +20,17 @@ import sensorlab
 import time
 import config
 import machine
-from digi import cloud
 from digi import gnss
 import uio
+if config.DRM_UPLOAD:
+    from digi import cloud
+if config.MQTT_UPLOAD:
+    from umqtt.simple import MQTTClient
+    import secrets
+if config.HTTP_UPLOAD:
+    import urequests
 
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 print(" Digi Sensor Lab - GNSS v%s" % __version__)
 
 # create module object for xbee
@@ -38,6 +44,14 @@ button.check(5000) # check for shutdown button
 status_led = sensorlab.StatusLED(config.STATUS_LED)
 status_led.off()
 
+# create mqtt client and connect to server
+if config.MQTT_UPLOAD:
+    client = MQTTClient(config.MQTT_CLIENT_ID+module.get_iccid(), config.MQTT_SERVER, port=config.MQTT_PORT, 
+                        user=secrets.MQTT_USER, password=secrets.MQTT_PASSWORD, ssl=config.MQTT_SSL)
+    print(" connecting to '%s'... " % config.MQTT_SERVER, end="")
+    client.connect()
+    print(" connected")
+
 #create watchdog timer
 dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 
@@ -45,7 +59,7 @@ dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
 # GNSS sensor is native. Note that LTE cannot run during GNSS polling
 
 # initialize comms failure count
-drm_fail = 0
+comm_fail  = 0
 
 # set initial upload rate
 upload_rate = config.UPLOAD_RATE
@@ -80,26 +94,58 @@ def location_cb(location):
 
 # sending procedure functionalized for clarity
 def send(value1, value2, value3):
-        global drm_fail
-        try:
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM1,value1)
-            data.send(timeout=10)
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM2,value2)
-            data.send(timeout=10)
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM3,value3)
-            data.send(timeout=10)
-            data = cloud.DataPoints(config.DRM_TRANSPORT)
-            data.add(config.STREAM4,"(" + value1 + "," + value2 + ")")
-            data.send(timeout=10)
-            print(" drm -> ", value1, value2, value3)
-            drm_fail = 0
-        except Exception as e:
-            print(e)
-            drm_fail += 1
-            status_led.blink(2, 0.2)
+        global comm_fail 
+        if config.HTTP_UPLOAD:
+            try:
+                json = [{"variable":config.HTTP_VARIABLE1,"value":value1,"unit":config.HTTP_UNIT1},
+                        {"variable":config.HTTP_VARIABLE2,"value":value2,"unit":config.HTTP_UNIT2},
+                        {"variable":config.HTTP_VARIABLE3,"value":value3,"unit":config.HTTP_UNIT3},
+                        {"variable":config.HTTP_VARIABLE4,"value":"(" + value1 + "," + value2 + ")","unit":config.HTTP_UNIT4}]
+                response = urequests.post(config.HTTP_URL, headers=config.HTTP_HEADERS, json=json, request_1_1=True)
+                print(" http -> " , value1, value2, value3," (" + str(response.status_code), response.reason.decode(), 
+                      "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
+                if 200 <= response.status_code <= 299:
+                    comm_fail = 0
+                else:
+                    comm_fail +=1
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+            finally:
+                response.close()
+        if config.MQTT_UPLOAD:
+            try:
+                client.publish(config.MQTT_TOPIC1, str(value1))
+                client.publish(config.MQTT_TOPIC2, str(value2))
+                client.publish(config.MQTT_TOPIC3, str(value3))
+                client.publish(config.MQTT_TOPIC4, "(" + value1 + "," + value2 + ")")
+                print(" mqtt -> ", value1, value2, value3)
+                comm_fail = 0
+            except Exception as e:
+                print(e)
+                comm_fail += 1
+                status_led.blink(2, 0.2)
+        if config.DRM_UPLOAD:
+            try:
+                data = cloud.DataPoints(config.DRM_TRANSPORT)
+                data.add(config.STREAM1,value1)
+                data.send(timeout=10)
+                data = cloud.DataPoints(config.DRM_TRANSPORT)
+                data.add(config.STREAM2,value2)
+                data.send(timeout=10)
+                data = cloud.DataPoints(config.DRM_TRANSPORT)
+                data.add(config.STREAM3,value3)
+                data.send(timeout=10)
+                data = cloud.DataPoints(config.DRM_TRANSPORT)
+                data.add(config.STREAM4,"(" + value1 + "," + value2 + ")")
+                data.send(timeout=10)
+                print(" drm -> ", value1, value2, value3)
+                comm_fail  = 0
+            except Exception as e:
+                print(e)
+                comm_fail  += 1
+                status_led.blink(2, 0.2)
 
 
 # first sample immediately
@@ -115,7 +161,7 @@ while True:
         except Exception as e:
             print(e)
     button.check(5000) # check for shutdown button
-    if drm_fail >= config.MAX_COMMS_FAIL:
-        print (" drm_fails {drm}".format(drm=drm_fail))
+    if comm_fail  >= config.MAX_COMMS_FAIL:
+        print (" comm_fails {comm}".format(comm=comm_fail ))
         module.reset()
     dog.feed() # update watchdog timer
