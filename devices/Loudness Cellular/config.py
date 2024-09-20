@@ -27,7 +27,7 @@ if HTTP_UPLOAD:
 
 DRM_UPLOAD = True
 if DRM_UPLOAD:
-    STREAM = "xbsl/loudness" #DRM
+    STREAM = "xbsl/loudness"
     DRM_TRANSPORT = cloud.TRANSPORT_UDP # Digi Remote Manager protocol: cloud.TRANSPORT_TCP or cloud.TRANSPORT_UDP
 
 
