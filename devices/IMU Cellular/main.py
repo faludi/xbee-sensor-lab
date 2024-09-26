@@ -48,8 +48,13 @@ if config.MQTT_UPLOAD:
     client = MQTTClient(config.MQTT_CLIENT_ID+module.get_iccid(), config.MQTT_SERVER, port=config.MQTT_PORT, 
                         user=secrets.MQTT_USER, password=secrets.MQTT_PASSWORD, ssl=config.MQTT_SSL)
     print(" connecting to '%s'... " % config.MQTT_SERVER, end="")
-    client.connect()
-    print(" connected")
+    try:
+        client.connect()
+        print(" connected")
+    except Exception as e:
+        print(e)
+        status_led.blink(10, 0.5)
+        print(" mqtt connection failed")
 
 #create watchdog timer
 dog = machine.WDT(timeout=90000, response=machine.HARD_RESET)
@@ -64,7 +69,7 @@ except Exception as e:
     module.reset()
 
 # initialize comms failure count
-comm_fail  = 0
+drm_fail = mqtt_fail = http_fail = 0
 
 # first sample immediately
 t1 = time.ticks_add(time.ticks_ms(), int(config.UPLOAD_RATE * -1000))
@@ -87,23 +92,29 @@ while True:
                 print(" http -> " , readings," (" + str(response.status_code), response.reason.decode(), 
                       "|", str(time.ticks_diff(time.ticks_ms(), t1)/1000), "secs)")
                 if 200 <= response.status_code <= 299:
-                    comm_fail = 0
+                    http_fail = 0
                 else:
-                    comm_fail +=1
+                    http_fail +=1
             except Exception as e:
                 print(e)
-                comm_fail += 1
+                http_fail += 1
                 status_led.blink(2, 0.2)
             finally:
                 response.close()
         if config.MQTT_UPLOAD:
             try:
-                client.publish(config.MQTT_TOPIC, str(readings))
+                client.publish(config.MQTT_TOPIC1, str(readings))
+                client.publish(config.MQTT_TOPIC2, str(ax))
+                client.publish(config.MQTT_TOPIC3, str(ay))
+                client.publish(config.MQTT_TOPIC4, str(az))
+                client.publish(config.MQTT_TOPIC5, str(gx))
+                client.publish(config.MQTT_TOPIC6, str(gy))
+                client.publish(config.MQTT_TOPIC7, str(gz))
                 print(" mqtt -> ", readings)
-                comm_fail = 0
+                mqtt_fail = 0
             except Exception as e:
                 print(e)
-                comm_fail += 1
+                mqtt_fail += 1
                 status_led.blink(2, 0.2)
         if config.DRM_UPLOAD:
             try:
@@ -126,13 +137,13 @@ while True:
                 data.add(config.STREAM6,gz)
                 data.send(timeout=10)
                 print(" drm -> ", ax, ay, az, gx, gy, gz)
-                comm_fail  = 0
+                drm_fail = 0
             except Exception as e:
                 print(e)
-                comm_fail  += 1
+                drm_fail += 1
                 status_led.blink(2, 0.2)
     button.check(5000) # check for shutdown button
-    if comm_fail  >= config.MAX_COMMS_FAIL:
-        print (" comm_fails {comm}".format(comm=comm_fail ))
+    if max(drm_fail,mqtt_fail,http_fail) >= config.MAX_COMMS_FAIL:
+        print (" drm_fails {drm}, mqtt_fails {mqtt}, http_fails {http}".format(drm=drm_fail, mqtt=mqtt_fail, http=http_fail, ))
         module.reset()
     dog.feed() # update watchdog timer

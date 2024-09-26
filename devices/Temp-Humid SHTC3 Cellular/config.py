@@ -9,7 +9,7 @@ MAX_COMMS_FAIL = 15 # number of consecutive communications failures before reset
 INPUT_BUTTON = "D0" # button to shut down cellular component when long-pressed
 STATUS_LED = "D4" # LED output pin for status messages
 
-MQTT_UPLOAD = False
+MQTT_UPLOAD = True
 if MQTT_UPLOAD:
     MQTT_TOPIC1 = "temperature"
     MQTT_TOPIC2 = "humidity"

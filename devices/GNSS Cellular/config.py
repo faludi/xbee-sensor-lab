@@ -21,7 +21,7 @@ if MQTT_UPLOAD:
     MQTT_SSL = True
     MQTT_CLIENT_ID = "sensorlab_client_id"
 
-HTTP_UPLOAD = False
+HTTP_UPLOAD = True
 if HTTP_UPLOAD:
     import secrets
     HTTP_URL = "http://api.tago.io/data"

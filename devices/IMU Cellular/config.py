@@ -9,9 +9,15 @@ MAX_COMMS_FAIL = 15 # number of consecutive communications failures before reset
 INPUT_BUTTON = "D0" # button to shut down cellular component when long-pressed
 STATUS_LED = "D4" # LED output pin for status messages
 
-MQTT_UPLOAD = False
+MQTT_UPLOAD = True
 if MQTT_UPLOAD:
-    MQTT_TOPIC = "imu"  # concatonate all variables into a single string
+    MQTT_TOPIC1 = "imu"  # concatonate all variables into a single string
+    MQTT_TOPIC2 = "ax"
+    MQTT_TOPIC3 = "ay"
+    MQTT_TOPIC4 = "az"
+    MQTT_TOPIC5 = "gx"
+    MQTT_TOPIC6 = "gy"
+    MQTT_TOPIC7 = "gz"
     MQTT_SERVER = "mqtt.tago.io"
     MQTT_PORT = 8883
     MQTT_SSL = True
