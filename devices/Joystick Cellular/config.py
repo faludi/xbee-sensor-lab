@@ -11,8 +11,8 @@ STATUS_LED = "D4" # LED output pin for status messages
 
 MQTT_UPLOAD = True
 if MQTT_UPLOAD:
-    MQTT_TOPIC1 = "joystick/x-axis"
-    MQTT_TOPIC2 = "joystick/y-axis"
+    MQTT_TOPIC1 = "joystick/xaxis"
+    MQTT_TOPIC2 = "joystick/yaxis"
     MQTT_TOPIC3 = "joystick/button"
     MQTT_SERVER = "mqtt.tago.io"
     MQTT_PORT = 8883
