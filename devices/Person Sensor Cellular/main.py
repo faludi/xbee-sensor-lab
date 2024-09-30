@@ -30,7 +30,7 @@ if config.MQTT_UPLOAD:
 if config.HTTP_UPLOAD:
     import urequests
 
-f__version__ = "1.3.0"
+__version__ = "1.3.0"
 print(" Digi Sensor Lab - Person Sensor v%s" % __version__)
 
 # create module object for xbee
@@ -72,35 +72,17 @@ except Exception as e:
 # initialize comms failure count
 drm_fail = mqtt_fail = http_fail = 0
 
-# first sample immediately
-t1 = time.ticks_add(time.ticks_ms(), int(config.UPLOAD_RATE * -1000))
+# #initialize face counts
+faces = 0
+is_facing = []
+
+# first sample after sensing
+t1 = time.ticks_ms()
 # main loop
 while True:
     t2 = time.ticks_ms()
     if time.ticks_diff(t2, t1) >= config.UPLOAD_RATE * 1000: # time for a sample
         t1 = time.ticks_ms()
-        faces = 0
-        is_facing = []
-        while (time.ticks_ms() < t1 + (config.UPLOAD_RATE * 1000) - (1 * 1000)): # until one second before the end of the cycle...
-            try:
-                num_faces, faces_data = person_sensor.get_data() # get number of faces detected and the data about each
-                if (num_faces > faces):
-                    faces = num_faces # record the max number of faces detected
-                for face_record in faces_data:
-                    is_facing.append(face_record['is_facing']) # for each face, record facing status in array              
-            except Exception as e:
-                print(e)
-                num_faces = 0 # if sensor is not found then face count is zero
-                status_led.blink(4, 1.5)
-            try:
-                attention = sum(is_facing)/len(is_facing) # average the is_facing to determine percentage of attention
-            except ZeroDivisionError:
-                attention = 0.0 # if no faces found, set attention to zero
-            if num_faces > 0: # print a progress string for debugging detection
-                print(num_faces,end='')
-            else:
-                print('.',end='')
-            time.sleep(0.2) # wait 200 ms between reads
         print('') # line feed
         if config.HTTP_UPLOAD:
             try:
@@ -143,6 +125,27 @@ while True:
                 print(e)
                 drm_fail += 1
                 status_led.blink(2, 0.2)
+        faces = 0
+        is_facing = []
+    try:
+        num_faces, faces_data = person_sensor.get_data() # get number of faces detected and the data about each
+        if (num_faces > faces):
+            faces = num_faces # record the max number of faces detected
+        for face_record in faces_data:
+            is_facing.append(face_record['is_facing']) # for each face, record facing status in array              
+    except Exception as e:
+        print(e)
+        num_faces = 0 # if sensor is not found then face count is zero
+        status_led.blink(4, 1.5)
+    try:
+        attention = sum(is_facing)/len(is_facing) # average the is_facing to determine percentage of attention
+    except ZeroDivisionError:
+        attention = 0.0 # if no faces found, set attention to zero
+    if num_faces > 0: # print a progress string for debugging detection
+        print(num_faces,end='')
+    else:
+        print('.',end='')
+    time.sleep(0.2) # wait 200 ms between reads
     button.check(5000) # check for shutdown button
     if max(drm_fail,mqtt_fail,http_fail) >= config.MAX_COMMS_FAIL:
         print (" drm_fails {drm}, mqtt_fails {mqtt}, http_fails {http}".format(drm=drm_fail, mqtt=mqtt_fail, http=http_fail, ))

@@ -31,7 +31,7 @@ if HTTP_UPLOAD:
     HTTP_UNIT2 = ""
     HTTP_UNIT3 = ""
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM1 = "xbsl/joystick/x-axis"
     STREAM2 = "xbsl/joystick/y-axis"

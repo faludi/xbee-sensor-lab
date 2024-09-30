@@ -4,7 +4,7 @@ __version__ = "1.3.0"
 
 from digi import cloud
 
-UPLOAD_RATE = 5 # upload frequency in seconds
+UPLOAD_RATE = 2 # upload frequency in seconds
 MAX_COMMS_FAIL = 15 # number of consecutive communications failures before reset
 INPUT_BUTTON = "D0" # button to shut down cellular component when long-pressed
 STATUS_LED = "D4" # LED output pin for status messages
@@ -28,7 +28,7 @@ if HTTP_UPLOAD:
     HTTP_UNIT1 = ""
     HTTP_UNIT2 = ""
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM1 = "xbsl/person_sensor/faces"
     STREAM2 = "xbsl/person_sensor/attention"
