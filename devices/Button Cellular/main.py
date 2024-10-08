@@ -46,8 +46,7 @@ import config
 import machine
 import qwiic_button
 import qwiic_i2c
-if config.DRM_UPLOAD:
-    from digi import cloud
+from digi import cloud
 if config.MQTT_UPLOAD:
     from umqtt.simple import MQTTClient
     import secrets
@@ -105,11 +104,12 @@ t1 = t3 = time.ticks_add(time.ticks_ms(), int(config.UPLOAD_RATE * -1000))
 last_press = -1
 # main loop
 while True:
+    t2 = time.ticks_ms()
     try:
         button_press = int(bt.is_button_pressed())
     except Exception as e:
         print(e)
-        status_led.blink(4, 1.5)
+        status_led.blink(1, 0.2)
     if last_press != button_press:
         last_press = button_press
         if config.HTTP_UPLOAD:
@@ -160,27 +160,26 @@ while True:
     dog.feed() # update watchdog timer
 
     # check cloud for commands
-    t2 = time.ticks_ms()
     if time.ticks_diff(t2, t1) >= 5 * 1000: # check DRM every 5 seconds
         t1 = time.ticks_ms()
-    request = cloud.device_request_receive()
-    if request is not None:
-        # A device request has been received, process it.
-        data = request.read()
-        message = data.decode("utf-8").strip()
-        if message == "LED ON":
-            print(" LED on request received")
-            bt.LED_on(255)
-            written = request.write(bytes("LED IS ON", "utf-8"))
-        elif message == "LED OFF":
-            print(" LED off request received")
-            bt.LED_off()
-            written = request.write(bytes("LED IS OFF", "utf-8"))
-        elif message.split()[0]=="LED" and message.split()[1].isdigit():
-            brightness = int(message.split()[1])
-            print(" LED brightness request received: ", brightness)
-            bt.LED_on(brightness)
-        else:
-            written = request.write(bytes("UNKNOWN COMMAND", "utf-8"))
-        request.close()
+        request = cloud.device_request_receive()
+        if request is not None:
+            # A device request has been received, process it.
+            data = request.read()
+            message = data.decode("utf-8").strip()
+            if message == "LED ON":
+                print(" LED on request received")
+                bt.LED_on(255)
+                written = request.write(bytes("LED IS ON", "utf-8"))
+            elif message == "LED OFF":
+                print(" LED off request received")
+                bt.LED_off()
+                written = request.write(bytes("LED IS OFF", "utf-8"))
+            elif message.split()[0]=="LED" and message.split()[1].isdigit():
+                brightness = int(message.split()[1])
+                print(" LED brightness request received: ", brightness)
+                bt.LED_on(brightness)
+            else:
+                written = request.write(bytes("UNKNOWN COMMAND", "utf-8"))
+            request.close()
 

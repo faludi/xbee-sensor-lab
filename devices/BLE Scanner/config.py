@@ -30,7 +30,7 @@ if HTTP_UPLOAD:
     HTTP_UNIT1 = ""
     HTTP_UNIT1 = "m"
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM1 = "xbsl/ble_scanner/distance"
     STREAM2 = "xbsl/ble_scanner/meters"

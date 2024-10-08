@@ -28,7 +28,7 @@ if HTTP_UPLOAD:
     HTTP_UNIT1 = "ºC"
     HTTP_UNIT2 = "% Rh"
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM1 = "xbsl/temperature"
     STREAM2 = "xbsl/humidity"

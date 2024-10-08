@@ -4,7 +4,7 @@ __version__ = "1.3.4"
 
 from digi import cloud
 
-UPLOAD_RATE = 2 # upload frequency in seconds
+UPLOAD_RATE = 10 # upload frequency in seconds
 MAX_COMMS_FAIL = 10 # number of consecutive communications failures before reset
 INPUT_BUTTON = "D0" # button to shut down cellular component when long-pressed
 STATUS_LED = "D4" # LED output pin for status messages

@@ -44,8 +44,7 @@ import time
 import config
 import machine
 import qwiic_relay
-if config.DRM_UPLOAD:
-    from digi import cloud
+from digi import cloud
 if config.MQTT_UPLOAD:
     from umqtt.simple import MQTTClient
     import secrets
@@ -134,6 +133,7 @@ t1 = t3 = time.ticks_add(time.ticks_ms(), int(config.UPLOAD_RATE * -1000))
 last_state = -1
 # main loop
 while True:
+    t2 = time.ticks_ms()
     try:
         relay_state = int(relay.get_relay_state())
     except Exception as e:
@@ -189,7 +189,6 @@ while True:
     dog.feed() # update watchdog timer
 
     # check cloud for commands
-    t2 = time.ticks_ms()
     if time.ticks_diff(t2, t1) >= 5 * 1000: # check DRM every 5 seconds
         t1 = time.ticks_ms()
     request = cloud.device_request_receive()

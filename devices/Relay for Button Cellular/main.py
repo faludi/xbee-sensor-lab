@@ -134,6 +134,7 @@ last_state = -1
 print(' waiting for input...')
 # main loop
 while True:
+    t2 = time.ticks_ms()
     try:
         relay_state = int(relay.get_relay_state())
     except Exception as e:
@@ -189,28 +190,27 @@ while True:
     dog.feed() # update watchdog timer
 
     # check cloud for commands
-    t2 = time.ticks_ms()
     if time.ticks_diff(t2, t1) >= 1 * 1000: # check DRM every 1 seconds
         t1 = time.ticks_ms()
-    request = cloud.device_request_receive()
-    if request is not None:
-        # A device request has been received, process it.
-        data = request.read()
-        message = data.decode("utf-8").strip()
-        if message == "RELAY ON":
-            print(" relay on request received")
-            relay.set_relay_on()
-            written = request.write(bytes("RELAY IS ON", "utf-8"))
-        elif message == "RELAY OFF":
-            print(" relay off request received")
-            relay.set_relay_off()
-            written = request.write(bytes("RELAY IS OFF", "utf-8"))
-        elif message == "RELAY STATE":
-            print(" relay state request received")
-            if relay_state == True:
+        request = cloud.device_request_receive()
+        if request is not None:
+            # A device request has been received, process it.
+            data = request.read()
+            message = data.decode("utf-8").strip()
+            if message == "RELAY ON":
+                print(" relay on request received")
+                relay.set_relay_on()
                 written = request.write(bytes("RELAY IS ON", "utf-8"))
-            if relay_state == False:
+            elif message == "RELAY OFF":
+                print(" relay off request received")
+                relay.set_relay_off()
                 written = request.write(bytes("RELAY IS OFF", "utf-8"))
-        else:
-            written = request.write(bytes("UNKNOWN COMMAND", "utf-8"))
-        request.close()
+            elif message == "RELAY STATE":
+                print(" relay state request received")
+                if relay_state == True:
+                    written = request.write(bytes("RELAY IS ON", "utf-8"))
+                if relay_state == False:
+                    written = request.write(bytes("RELAY IS OFF", "utf-8"))
+            else:
+                written = request.write(bytes("UNKNOWN COMMAND", "utf-8"))
+            request.close()

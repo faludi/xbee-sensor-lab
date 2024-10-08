@@ -25,7 +25,7 @@ if HTTP_UPLOAD:
     HTTP_VARIABLE = "relay"
     HTTP_UNIT = ""
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     SSTREAM1 = "xbsl/relay"
     DRM_TRANSPORT = cloud.TRANSPORT_UDP # Digi Remote Manager protocol: cloud.TRANSPORT_TCP or cloud.TRANSPORT_UDP

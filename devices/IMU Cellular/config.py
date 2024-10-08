@@ -31,7 +31,7 @@ if HTTP_UPLOAD:
     HTTP_VARIABLE = "imu" # concatonate all variables into a single string
     HTTP_UNIT = ""
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM1 = "xbsl/imu/ax" # separate uploads for each variable for DRM
     STREAM2 = "xbsl/imu/ay"

@@ -31,7 +31,7 @@ if HTTP_UPLOAD:
     HTTP_UNIT2 = "% Rh"
     HTTP_UNIT3 = "kPa"
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM1 = "xbsl/atmospheric/temperature"
     STREAM2 = "xbsl/atmospheric/humidity"

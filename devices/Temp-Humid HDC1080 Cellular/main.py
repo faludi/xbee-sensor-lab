@@ -106,7 +106,7 @@ while True:
             try:
                 client.publish(config.MQTT_TOPIC1, str(temperature))
                 client.publish(config.MQTT_TOPIC2, str(humidity))
-                print(" mqtt -> ", loudness)
+                print(" mqtt -> ", temperature, humidity)
                 mqtt_fail = 0
             except Exception as e:
                 print(e)

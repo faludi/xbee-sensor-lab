@@ -104,8 +104,8 @@ while True:
         if config.MQTT_UPLOAD:
             try:
                 client.publish(config.MQTT_TOPIC1, str(faces))
-                client.publish(config.MQTT_TOPIC2, str(attention))
-                print(" mqtt -> ", faces, attention)
+                # client.publish(config.MQTT_TOPIC2, str(attention)) # not currently used on dashboards
+                print(" mqtt -> ", faces) # , attention)
                 mqtt_fail = 0
             except Exception as e:
                 print(e)

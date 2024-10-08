@@ -34,7 +34,7 @@ if HTTP_UPLOAD:
     HTTP_UNIT2 = ""
     HTTP_UNIT3 = ""
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM1 = "xbsl/sms/text"
     STREAM2 = "xbsl/sms/sender"
