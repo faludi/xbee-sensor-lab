@@ -19,8 +19,10 @@ from machine import I2C, Pin
 import network
 import time
 import xbee
+import config
 
-__version__ = "1.2.2"
+
+__version__ = "1.3.0"
 
 class Module:
     # xbee configuration performed automatically at each startup
@@ -141,3 +143,25 @@ class StatusLED:
 
     def off(self):
         self.status_led.off()
+
+class MQTT:
+    def __init__(self):
+        umqtt_module = __import__("umqtt.simple")
+        self.MQTTClient = getattr(umqtt_module.simple, "MQTTClient")
+        self.secrets = __import__("secrets")
+        self.client = self.MQTTClient(config.MQTT_CLIENT_ID+self.get_iccid(), config.MQTT_SERVER, port=config.MQTT_PORT, 
+                        user=self.secrets.MQTT_USER, password=self.secrets.MQTT_PASSWORD, ssl=config.MQTT_SSL)
+    def connect(self):
+        self.client.connect()
+    def get_iccid(self):
+        id = xbee.atcmd("S#")
+        return id
+    def publish(self, topic, message):
+        self.topic = topic
+        self.message = message
+        self.client.publish(self.topic, str(self.message))
+    def ping(self):
+        self.client.ping()
+    def disconnect(self):
+        self.client.disconnect()
+
