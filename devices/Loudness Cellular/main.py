@@ -30,7 +30,7 @@ if config.MQTT_UPLOAD:
 if config.HTTP_UPLOAD:
     import urequests
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 print(" Digi Sensor Lab - Loudness v%s" % __version__)
 
 # create module object for xbee
@@ -46,15 +46,14 @@ status_led.off()
 
 # create mqtt client and connect to server
 if config.MQTT_UPLOAD:
-    client = MQTTClient(config.MQTT_CLIENT_ID+module.get_iccid(), config.MQTT_SERVER, port=config.MQTT_PORT, 
-                        user=secrets.MQTT_USER, password=secrets.MQTT_PASSWORD, ssl=config.MQTT_SSL)
+    client = sensorlab.MQTT()
     print(" connecting to '%s'... " % config.MQTT_SERVER, end="")
     try:
         client.connect()
         print(" connected")
     except Exception as e:
         print(e)
-        status_led.blink(20, 1.5)
+        status_led.blink(10, 1.5)
         module.reset()
     
     
@@ -75,7 +74,7 @@ except Exception as e:
 drm_fail = mqtt_fail = http_fail = 0
 
 # first sample immediately
-t1 = time.ticks_add(time.ticks_ms(), int(int(config.UPLOAD_RATE * -1000)))
+t1 = t3 = time.ticks_add(time.ticks_ms(), int(int(config.UPLOAD_RATE * -1000)))  # ******
 # main loop
 while True:
     t2 = time.ticks_ms()
@@ -123,7 +122,19 @@ while True:
                 drm_fail += 1
                 status_led.blink(2, 0.2)
     button.check(5000) # check for shutdown button
-
+    if config.MQTT_UPLOAD:
+        if time.ticks_diff(t2, t3) >= 30 * 1000: # ping mqtt every 30 seconds  # ******
+            t3 = time.ticks_ms()
+            try:
+                client.ping() # send a ping to the mqtt server
+            except Exception as e:
+                print(e)
+                status_led.blink(2, 0.2)
+                try:
+                    client.connect()
+                except Exception as e:
+                    print(e)
+                    module.reset()
     if max(drm_fail,mqtt_fail,http_fail) >= config.MAX_COMMS_FAIL:
         print (" drm_fails {drm}, mqtt_fails {mqtt}, http_fails {http}".format(drm=drm_fail, mqtt=mqtt_fail, http=http_fail, ))
         module.reset()
