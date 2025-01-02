@@ -5,7 +5,7 @@ __version__ = "1.3.0"
 from digi import cloud
 
 RELAY_CHECK_RATE = 900 # relay check rate in seconds (900 == 15 minutes)
-TARGET_ID = "00010000-00000000-03592051-06486550" # the Digi Remote Manager ID of the Relay device
+TARGET_ID = "00010000-00000000-03559465-26177295" #  the Digi Remote Manager ID of the Relay device
 MAX_COMMS_FAIL = 10 # number of consecutive communications failures before reset
 INPUT_BUTTON = "D0" # button to shut down cellular component when long-pressed
 STATUS_LED = "D4" # LED output pin for status messages

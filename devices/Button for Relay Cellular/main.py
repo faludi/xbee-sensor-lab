@@ -35,7 +35,7 @@ if config.MQTT_UPLOAD:
 if config.HTTP_UPLOAD:
     import urequests
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 print(" Digi Sensor Lab - Button for Relay v%s" % __version__)
 
 # commands to exchange with Remote Manager
@@ -210,6 +210,7 @@ t1 = t3 = time.ticks_add(time.ticks_ms(), int(config.RELAY_CHECK_RATE * - 1000))
 relay_state = False # state is unknown at this point
 button_click = False
 
+
 # main loop
 while True:
     # periodically check relay state
@@ -221,8 +222,16 @@ while True:
         if state_check is not None:
             relay_state = state_check
         print(' relay check complete')
-        print(' waiting for clicks...')
-
+        if config.MQTT_UPLOAD:
+            try:
+                client.publish(config.MQTT_TOPIC, str(relay_state))
+                print(" mqtt -> ", int(relay_state))
+                mqtt_fail = 0
+            except Exception as e:
+                print(e)
+                mqtt_fail += 1
+                status_led.blink(2, 0.2)
+                print(' waiting for clicks...')
     if relay_state:
         bt.LED_on(255)
     else:
@@ -282,6 +291,15 @@ while True:
             relay_state = not relay_state
         bt.clear_event_bits() # discard any intervening clicks
         button_click = False
+        if config.MQTT_UPLOAD:
+            try:
+                client.publish(config.MQTT_TOPIC, str(relay_state))
+                print(" mqtt -> ", int(relay_state))
+                mqtt_fail = 0
+            except Exception as e:
+                print(e)
+                mqtt_fail += 1
+                status_led.blink(2, 0.2) 
         print(' waiting for clicks...')
     if config.MQTT_UPLOAD:
         if time.ticks_diff(t2, t3) >= 60 * 1000: # ping mqtt every 60 seconds
