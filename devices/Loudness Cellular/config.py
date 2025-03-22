@@ -9,7 +9,7 @@ MAX_COMMS_FAIL = 10 # number of consecutive communications failures before reset
 INPUT_BUTTON = "D0" # button to shut down cellular component when long-pressed
 STATUS_LED = "D4" # LED output pin for status messages
 
-MQTT_UPLOAD = False
+MQTT_UPLOAD = True
 if MQTT_UPLOAD:
     MQTT_TOPIC = "loudness"
     MQTT_SERVER = "mqtt.tago.io"
@@ -25,7 +25,7 @@ if HTTP_UPLOAD:
     HTTP_VARIABLE = "loudness"
     HTTP_UNIT = "dB"
 
-DRM_UPLOAD = True
+DRM_UPLOAD = False
 if DRM_UPLOAD:
     STREAM = "xbsl/loudness"
     DRM_TRANSPORT = cloud.TRANSPORT_UDP # Digi Remote Manager protocol: cloud.TRANSPORT_TCP or cloud.TRANSPORT_UDP
